@@ -900,7 +900,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
     private void writeUncompressedImage(Uri src, Uri dest) throws FileNotFoundException,
             IOException {
 
-        FileInputStream fis = new FileInputStream(FileHelper.stripFileProtocol(src.toString()));
+        InputStream fis = cordova.getActivity().getContentResolver().openInputStream(src);
         writeUncompressedImage(fis, dest);
 
     }
