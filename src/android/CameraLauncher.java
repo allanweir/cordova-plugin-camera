@@ -37,8 +37,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.content.FileProvider;
+import androidx.core.content.FileProvider;
 import android.util.Base64;
+import android.util.Log;
 
 import org.apache.cordova.BuildHelper;
 import org.apache.cordova.CallbackContext;
@@ -90,7 +91,9 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
     private static final String GET_VIDEO = "Get Video";
     private static final String GET_All = "Get All";
     private static final String CROPPED_URI_KEY = "croppedUri";
+    private static final String CROPPED_FILE_PATH_KEY = "croppedFilePath";
     private static final String IMAGE_URI_KEY = "imageUri";
+    private static final String IMAGE_FILE_PATH_KEY = "imageFilePath";
 
     private static final String TAKE_PICTURE_ACTION = "takePicture";
 
@@ -474,6 +477,10 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 this.croppedFilePath :
                 this.imageFilePath;
 
+      Log.w("Sourcepath", this.imageFilePath == null ? "NO IMAGE PATH" : this.imageFilePath);
+      Log.w("Sourceuri", this.imageUri == null ? "NO IMAGE URI" : this.imageUri.toString());
+      Log.w("Sourcepathcropped", this.croppedFilePath == null ? "NO CROPPED PATH" : this.croppedFilePath);
+      Log.w("Sourcepath proper", sourcePath == null ? "NO SOURCE PATH" : sourcePath);
 
         if (this.encodingType == JPEG) {
             try {
@@ -1348,11 +1355,19 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         state.putBoolean("saveToPhotoAlbum", this.saveToPhotoAlbum);
 
         if (this.croppedUri != null) {
-            state.putString(CROPPED_URI_KEY, this.croppedFilePath);
+            state.putString(CROPPED_URI_KEY, this.croppedUri.toString());
+        }
+
+        if (this.croppedFilePath != null) {
+          state.putString(CROPPED_FILE_PATH_KEY, this.croppedFilePath);
         }
 
         if (this.imageUri != null) {
-            state.putString(IMAGE_URI_KEY, this.imageFilePath);
+            state.putString(IMAGE_URI_KEY, this.imageUri.toString());
+        }
+
+        if (this.imageFilePath != null) {
+          state.putString(IMAGE_FILE_PATH_KEY, this.imageFilePath);
         }
 
         return state;
@@ -1371,13 +1386,19 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         this.correctOrientation = state.getBoolean("correctOrientation");
         this.saveToPhotoAlbum = state.getBoolean("saveToPhotoAlbum");
 
+        Log.w("Restoring", "Restoring all properties!");
+        if (state.containsKey(IMAGE_URI_KEY)) {
+            this.imageUri = Uri.parse(state.getString(IMAGE_URI_KEY));
+        }
+        if (state.containsKey(IMAGE_FILE_PATH_KEY)) {
+          this.imageFilePath = state.getString(IMAGE_FILE_PATH_KEY);
+        }
         if (state.containsKey(CROPPED_URI_KEY)) {
-            this.croppedUri = Uri.parse(state.getString(CROPPED_URI_KEY));
+          this.croppedUri = Uri.parse(state.getString(CROPPED_URI_KEY));
         }
 
-        if (state.containsKey(IMAGE_URI_KEY)) {
-            //I have no idea what type of URI is being passed in
-            this.imageUri = Uri.parse(state.getString(IMAGE_URI_KEY));
+        if (state.containsKey(CROPPED_FILE_PATH_KEY)) {
+          this.croppedFilePath = state.getString(CROPPED_FILE_PATH_KEY);
         }
 
         this.callbackContext = callbackContext;
