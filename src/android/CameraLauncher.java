@@ -49,6 +49,7 @@ import org.apache.cordova.PermissionHelper;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -60,6 +61,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class launches the camera view, allows the user to take a picture, closes the camera view,
@@ -453,7 +456,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
       try {
           processResultFromCamera(destType, cameraIntent);
       }
-      catch (IOException e)
+      catch (IOException | JSONException e)
       {
           e.printStackTrace();
           LOG.e(LOG_TAG, "Unable to write to file");
@@ -467,11 +470,12 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
      * @param destType          In which form should we return the image
      * @param intent            An Intent, which can return result data to the caller (various data can be attached to Intent "extras").
      */
-    private void processResultFromCamera(int destType, Intent intent) throws IOException {
+    private void processResultFromCamera(int destType, Intent intent) throws IOException, JSONException {
         int rotate = 0;
 
         // Create an ExifHelper to save the exif data that is lost during compression
         ExifHelper exif = new ExifHelper();
+        JSONObject item = new JSONObject();
 
         String sourcePath = (this.allowEdit && this.croppedUri != null) ?
                 this.croppedFilePath :
@@ -489,7 +493,17 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 exif.readExifData();
                 rotate = exif.getOrientation();
 
-            } catch (IOException e) {
+                item.put("gpsAltitude", exif.gpsAltitude);
+                item.put("gpsAltitudeRef", exif.gpsAltitudeRef);
+                item.put("gpsDateStamp", exif.gpsDateStamp);
+                item.put("gpsLatitude", exif.gpsLatitude==null ? null : exif.gpsLatitude.toString());
+                item.put("gpsLatitudeDeg", exif.gpsLatitudeDeg);
+                item.put("gpsLatitudeRef", exif.gpsLatitudeRef);
+                item.put("gpsLongitude", exif.gpsLongitude==null ? null : exif.gpsLongitude.toString());
+                item.put("gpsLongitudeDeg", exif.gpsLongitudeDeg);
+                item.put("gpsLongitudeRef", exif.gpsLongitudeRef);
+
+            } catch (IOException | JSONException e) {
                 e.printStackTrace();
             }
         }
@@ -546,7 +560,8 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 // If we saved the uncompressed photo to the album, we can just
                 // return the URI we already created
                 if (this.saveToPhotoAlbum) {
-                    this.callbackContext.success(galleryUri.toString());
+                    item.put("uri", galleryUri.toString());
+                    this.callbackContext.success(item);
                 } else {
                     Uri uri = Uri.fromFile(createCaptureFile(this.encodingType, System.currentTimeMillis() + ""));
 
@@ -558,7 +573,8 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                         writeUncompressedImage(imageUri, uri);
                     }
 
-                    this.callbackContext.success(uri.toString());
+                    item.put("uri", uri.toString());
+                    this.callbackContext.success(item);
                 }
             } else {
                 Uri uri = Uri.fromFile(createCaptureFile(this.encodingType, System.currentTimeMillis() + ""));
@@ -593,7 +609,8 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 }
 
                 // Send Uri back to JavaScript for viewing image
-                this.callbackContext.success(uri.toString());
+                item.put("uri", uri.toString());
+                this.callbackContext.success(item);
 
             }
         } else {
@@ -786,7 +803,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                 destType = requestCode - CROP_CAMERA;
                 try {
                     processResultFromCamera(destType, intent);
-                } catch (IOException e) {
+                } catch (IOException | JSONException e) {
                     e.printStackTrace();
                     LOG.e(LOG_TAG, "Unable to write to file");
                 }
@@ -814,7 +831,7 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
                     } else {
                         this.processResultFromCamera(destType, intent);
                     }
-                } catch (IOException e) {
+                } catch (IOException | JSONException e) {
                     e.printStackTrace();
                     this.failPicture("Error capturing image.");
                 }

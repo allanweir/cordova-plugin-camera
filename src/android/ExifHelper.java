@@ -28,13 +28,15 @@ public class ExifHelper {
     private String exposureTime = null;
     private String flash = null;
     private String focalLength = null;
-    private String gpsAltitude = null;
-    private String gpsAltitudeRef = null;
-    private String gpsDateStamp = null;
-    private String gpsLatitude = null;
-    private String gpsLatitudeRef = null;
-    private String gpsLongitude = null;
-    private String gpsLongitudeRef = null;
+    public String gpsAltitude = null;
+    public String gpsAltitudeRef = null;
+    public String gpsDateStamp = null;
+    public Float gpsLatitude = null;
+    public String gpsLatitudeDeg = null;
+    public String gpsLatitudeRef = null;
+    public Float gpsLongitude = null;
+    public String gpsLongitudeDeg = null;
+    public String gpsLongitudeRef = null;
     private String gpsProcessingMethod = null;
     private String gpsTimestamp = null;
     private String iso = null;
@@ -70,6 +72,9 @@ public class ExifHelper {
      * Reads all the EXIF data from the input file.
      */
     public void readExifData() {
+        float[] latlng = new float[2];
+        boolean haveLatlng = inFile.getLatLong(latlng);
+
         this.aperture = inFile.getAttribute(ExifInterface.TAG_APERTURE);
         this.datetime = inFile.getAttribute(ExifInterface.TAG_DATETIME);
         this.exposureTime = inFile.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
@@ -78,9 +83,11 @@ public class ExifHelper {
         this.gpsAltitude = inFile.getAttribute(ExifInterface.TAG_GPS_ALTITUDE);
         this.gpsAltitudeRef = inFile.getAttribute(ExifInterface.TAG_GPS_ALTITUDE_REF);
         this.gpsDateStamp = inFile.getAttribute(ExifInterface.TAG_GPS_DATESTAMP);
-        this.gpsLatitude = inFile.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+        this.gpsLatitude = haveLatlng ? latlng[0] : null;
+        this.gpsLatitudeDeg = inFile.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
         this.gpsLatitudeRef = inFile.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
-        this.gpsLongitude = inFile.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+        this.gpsLongitude = haveLatlng ? latlng[1] : null;
+        this.gpsLongitudeDeg = inFile.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
         this.gpsLongitudeRef = inFile.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
         this.gpsProcessingMethod = inFile.getAttribute(ExifInterface.TAG_GPS_PROCESSING_METHOD);
         this.gpsTimestamp = inFile.getAttribute(ExifInterface.TAG_GPS_TIMESTAMP);
@@ -127,13 +134,13 @@ public class ExifHelper {
             this.outFile.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, this.gpsDateStamp);
         }
         if (this.gpsLatitude != null) {
-            this.outFile.setAttribute(ExifInterface.TAG_GPS_LATITUDE, this.gpsLatitude);
+            this.outFile.setAttribute(ExifInterface.TAG_GPS_LATITUDE, this.gpsLatitudeDeg);
         }
         if (this.gpsLatitudeRef != null) {
             this.outFile.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, this.gpsLatitudeRef);
         }
         if (this.gpsLongitude != null) {
-            this.outFile.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, this.gpsLongitude);
+            this.outFile.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, this.gpsLongitudeDeg);
         }
         if (this.gpsLongitudeRef != null) {
             this.outFile.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, this.gpsLongitudeRef);
